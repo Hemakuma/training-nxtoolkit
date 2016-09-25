@@ -44,14 +44,17 @@ def main():
         print('%% Could not login to Switch')
         sys.exit(0)
 
+
+    # Create L2BD objects
+    vlan1 = NX.L2BD('vlan-300')
+    vlan2 = NX.L2BD('vlan-301')
+
     # Create a ConfigBDs object to configure multiple l2bd at a time
     bds = NX.ConfigBDs()
 
-    # Create L2BD objects
-    l2BDs = NX.L2BD('vlan-301')
-
     # Attach L2DB instance
-    bds.add_l2bds(l2BDs)
+    bds.add_l2bds(vlan1)
+    bds.add_l2bds(vlan2)
 
     # Push the tenant to the Switch
     resp = session.push_to_switch(bds.get_url(),

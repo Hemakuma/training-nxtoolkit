@@ -18,7 +18,8 @@
 #                                                                              #
 ################################################################################
 """
-Simple application that logs on to the Switch and configures l2bd.
+Simple application that logs on to the Switch and displays all
+of the Interfaces.
 """
 import sys
 import nxtoolkit.nxtoolkit as NX
@@ -27,13 +28,12 @@ import nxtoolkit.nxtoolkit as NX
 def main():
     """
     Main execution routine
-
     :return: None
     """
     # Take login credentials from the command line if provided
     # Otherwise, take them from your environment variables file ~/.profile
-    description = '''Simple application that logs on to the Switch
-            and configure l2bd.'''
+    description = '''Simple application that logs on to the Switch and
+                    displays all of the Interfaces.'''
     creds = NX.Credentials('switch', description)
     args = creds.get()
 
@@ -44,21 +44,41 @@ def main():
         print('%% Could not login to Switch')
         sys.exit(0)
 
-    # Create a ConfigBDs object to configure multiple l2bd at a time
-    bds = NX.ConfigBDs()
+    # Download all of the interfaces
+    # and store the data as tuples in a list
+    data = []
+    interfaces = NX.Interface.get(session)
+    for interface in interfaces:
+        data.append((interface.attributes['if_name'],
+                     interface.attributes['porttype'],
+                     interface.attributes['adminstatus'],
+                     interface.attributes['operSt'],
+                     interface.attributes['speed'],
+                     interface.attributes['mtu'],
+                     interface.attributes['usage']))
 
-    # Create L2BD objects
-    l2BDs = NX.L2BD('vlan-301')
+    # Display the data downloaded
+    template = "{0:17} {1:6} {2:^6} {3:^6} {4:7} {5:6} {6:9}"
+    print(template.format("INTERFACE", "TYPE", "ADMIN", "OPER",
+                          "SPEED", "MTU", "USAGE"))
+    print(template.format("---------", "----", "------", "------",
+                          "-----", "---", "---------"))
+    #for rec in data:
+    #    print(template.format(*rec))
+    # For learning purpose, you can uncomment some of these.
+    #print the contents of the data[]; since it is a list , we need to read one at a time
+    #this will print the contents of the data list.  if  you want to print a particular value inside the tupple
+    # you can reference it like this x[position in tuple]
+    # if you want to know the  operation state, you need to look at 3
+    #for x in data:
+    #  print x
+    #Hemant adds
+    #print only the interfaces that are up
+    #data is a list of tupples.  The 3 column has the  operations state of the interface
+    data_up = [x for x in data if x[3] == "up"]
+    for d in  data_up:
+        print(template.format(*d))
 
-    # Attach L2DB instance
-    bds.add_l2bds(l2BDs)
-
-    # Push the tenant to the Switch
-    resp = session.push_to_switch(bds.get_url(),
-                                bds.get_json())
-    if not resp.ok:
-        print('%% Error: Could not push configuration to Switch')
-        print(resp.text)
 
 if __name__ == '__main__':
     main()
